@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center;">
+    <h2>{{ title }}</h2>
+    <a href="{% url 'employee_list' %}" class="btn" style="background-color: #666;">Cancel</a>
+</div>
+
+<div class="content-box">
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+            {% for field in form %}
+            <div style="flex: 1 1 300px;">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                    <div style="color: #ba2121; font-size: 12px; margin-top: -10px; margin-bottom: 10px;">
+                        {{ field.errors|join:", " }}
+                    </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <div style="margin-top: 20px;">
+            <button type="submit" class="btn">Save Employee</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

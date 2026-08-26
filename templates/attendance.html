@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="display: flex; justify-content: center;">
+    <div class="content-box" style="text-align: center; max-width: 600px; width: 100%;">
+        <h3>Camera Attendance</h3>
+        
+        <div style="margin-bottom: 20px;">
+            <video id="videoElement" autoplay style="width: 100%; max-width: 400px; border: 1px solid #ccc;"></video>
+            <canvas id="canvasElement" style="display: none;"></canvas>
+        </div>
+
+        <form method="post" id="attendanceForm" style="text-align: left;">
+            {% csrf_token %}
+            {% if user.is_superuser %}
+            <div style="margin-bottom: 20px;">
+                <label>Select Employee</label>
+                {{ form.employee }}
+            </div>
+            {% endif %}
+            
+            <input type="hidden" name="action_type" id="actionType">
+            {{ form.check_in_photo_data }}
+
+            <div style="text-align: center; margin-top: 20px;">
+                <button type="button" class="btn" style="background-color: #2b702b; padding: 10px 20px; font-size: 16px; margin-right: 10px;" onclick="submitAttendance('check_in')">
+                    Check In
+                </button>
+                <button type="button" class="btn" style="background-color: #8b6508; padding: 10px 20px; font-size: 16px;" onclick="submitAttendance('check_out')">
+                    Check Out
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const video = document.getElementById('videoElement');
+    const canvas = document.getElementById('canvasElement');
+    const photoDataInput = document.getElementById('id_check_in_photo_data');
+    const form = document.getElementById('attendanceForm');
+    const actionTypeInput = document.getElementById('actionType');
+
+    // Access webcam
+    if (navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function (stream) {
+                video.srcObject = stream;
+            })
+            .catch(function (error) {
+                console.log("Something went wrong!", error);
+                alert("Could not access the webcam. Please ensure permissions are granted.");
+            });
+    }
+
+    function submitAttendance(action) {
+        actionTypeInput.value = action;
+        
+        if (action === 'check_in') {
+            // Capture image
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Convert to base64
+            const dataURL = canvas.toDataURL('image/png');
+            photoDataInput.value = dataURL;
+        } else {
+            photoDataInput.value = ''; // No photo needed for check out
+        }
+        
+        form.submit();
+    }
+</script>
+{% endblock %}

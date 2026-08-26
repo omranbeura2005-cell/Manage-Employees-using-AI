@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="content-box" style="padding: 30px; margin-top: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+        <h3 style="color: #496BD8; margin: 0;">Employee Details</h3>
+        <a href="{% url 'employee_list' %}" class="btn" style="background-color: #666;">&larr; Back to List</a>
+    </div>
+    
+    <div style="display: flex; gap: 40px; margin-top: 30px;">
+        <div style="text-align: center;">
+            {% if target_employee.profile_picture %}
+            <img src="{{ target_employee.profile_picture.url }}" alt="Profile" style="width: 150px; height: 150px; border-radius: 75px; object-fit: cover; border: 3px solid #496BD8;">
+            {% else %}
+            <div style="width: 150px; height: 150px; border-radius: 75px; background-color: #ddd; color: #666; font-size: 48px; line-height: 150px; display: inline-block; border: 3px solid #ccc;">
+                {{ target_employee.first_name|first }}{{ target_employee.last_name|first }}
+            </div>
+            {% endif %}
+            
+            {% if user.is_superuser %}
+            <div style="margin-top: 20px;">
+                <a href="{% url 'employee_update' target_employee.pk %}" class="btn" style="display: block; width: 100%; box-sizing: border-box; margin-bottom: 10px;">✏️ Edit Profile</a>
+                
+                <form action="{% url 'employee_delete' target_employee.pk %}" method="post" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this employee?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger" style="display: block; width: 100%; box-sizing: border-box;">🗑️ Delete Employee</button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div style="flex: 1;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 18px 0; color: #666; width: 150px;"><strong>Full Name:</strong></td>
+                    <td style="padding: 18px 0; font-size: 18px;">{{ target_employee.first_name }} {{ target_employee.last_name }}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 18px 0; color: #666;"><strong>Email:</strong></td>
+                    <td style="padding: 18px 0;">{{ target_employee.email }}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 18px 0; color: #666;"><strong>Phone:</strong></td>
+                    <td style="padding: 18px 0;">{{ target_employee.phone|default:"-" }}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 18px 0; color: #666;"><strong>Age:</strong></td>
+                    <td style="padding: 18px 0;">{{ target_employee.age|default:"-" }}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 18px 0; color: #666;"><strong>Department:</strong></td>
+                    <td style="padding: 18px 0;">{{ target_employee.department }}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 18px 0; color: #666;"><strong>Designation:</strong></td>
+                    <td style="padding: 18px 0;">{{ target_employee.designation }}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 18px 0; color: #666;"><strong>Joining Date:</strong></td>
+                    <td style="padding: 18px 0;">{{ target_employee.join_date|date:"F d, Y" }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 18px 0; color: #666;"><strong>Account Status:</strong></td>
+                    <td style="padding: 18px 0;">
+                        {% if target_employee.is_active %}
+                            <span style="color: green; font-weight: bold;">Active</span>
+                        {% else %}
+                            <span style="color: red; font-weight: bold;">Inactive</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="content-box" style="padding: 30px; margin-top: 20px;">
+    <h3 style="color: #496BD8; margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px;">Attendance Progress (Yearly)</h3>
+    <div style="display: flex; gap: 40px; margin-top: 20px;">
+        <div style="flex: 1; text-align: center; background-color: #f8f9fa; padding: 20px; border-radius: 8px;">
+            <p style="color: #666; margin: 0; font-size: 16px;">Required Attendance</p>
+            <p style="font-size: 36px; font-weight: bold; color: #333; margin: 10px 0;">200</p>
+        </div>
+        <div style="flex: 1; text-align: center; background-color: #f8f9fa; padding: 20px; border-radius: 8px;">
+            <p style="color: #666; margin: 0; font-size: 16px;">Current Attendance</p>
+            <p style="font-size: 36px; font-weight: bold; color: #496BD8; margin: 10px 0;">{{ target_employee.attendance_count }}</p>
+            <p style="font-size: 12px; color: #999; margin: 0;">Total checked-in days</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

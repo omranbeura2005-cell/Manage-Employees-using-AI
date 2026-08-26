@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Attendance Log</h2>
+
+<div class="content-box">
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Employee</th>
+                <th>Check In Photo</th>
+                <th>Check In Time</th>
+                <th>Check Out Time</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for att in attendances %}
+            <tr>
+                <td>{{ att.date|date:"M d, Y" }}</td>
+                <td><strong>{{ att.employee.first_name }} {{ att.employee.last_name }}</strong></td>
+                <td>
+                    {% if att.check_in_photo %}
+                    <img src="{{ att.check_in_photo.url }}" alt="Check In" style="width: 80px; height: 60px; object-fit: cover; border: 1px solid #ccc;">
+                    {% else %}
+                    <span style="color: #999; font-size: 12px;">No photo</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if att.check_in_time %}
+                        <span style="background-color: #dff0d8; color: #3c763d; padding: 2px 6px; border-radius: 4px;">{{ att.check_in_time|time:"H:i" }}</span>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if att.check_out_time %}
+                        <span style="background-color: #fcf8e3; color: #8a6d3b; padding: 2px 6px; border-radius: 4px;">{{ att.check_out_time|time:"H:i" }}</span>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if att.check_in_time and not att.check_out_time %}
+                        <span style="color: #3c763d;">Working</span>
+                    {% elif att.check_in_time and att.check_out_time %}
+                        <span style="color: #666;">Completed</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="text-align: center;">No attendance records found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

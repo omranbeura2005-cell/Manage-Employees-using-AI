@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Dashboard - {{ today|date:"F d, Y" }}</h2>
+
+<div style="display: flex; gap: 20px; margin-bottom: 30px;">
+    {% if user.is_superuser %}
+    <div class="content-box" style="flex: 1; text-align: center; background-color: #f0f4f8; border-color: #c9d8e5;">
+        <h3 style="color: #496BD8; margin-top: 0;">Total Employees</h3>
+        <p style="font-size: 32px; font-weight: bold; margin: 0;">{{ total_employees }}</p>
+    </div>
+    {% else %}
+    <div class="content-box" style="flex: 1; text-align: center; background-color: #f0f4f8; border-color: #c9d8e5;">
+        <h3 style="color: #496BD8; margin-top: 0;">My Department</h3>
+        <p style="font-size: 24px; font-weight: bold; margin: 0;">{{ user.employee.department|default:"N/A" }}</p>
+    </div>
+    {% endif %}
+    
+    <div class="content-box" style="flex: 1; text-align: center; background-color: #f0f4f8; border-color: #c9d8e5;">
+        <h3 style="color: #496BD8; margin-top: 0;">{% if user.is_superuser %}Present Today{% else %}My Status Today{% endif %}</h3>
+        <p style="font-size: 32px; font-weight: bold; margin: 0;">
+            {% if user.is_superuser %}
+                {{ present_today }}
+            {% else %}
+                {% if present_today %}Checked In{% else %}Not Checked In{% endif %}
+            {% endif %}
+        </p>
+    </div>
+    
+    {% if user.is_superuser %}
+    <div class="content-box" style="flex: 1; text-align: center; background-color: #f0f4f8; border-color: #c9d8e5;">
+        <h3 style="color: #496BD8; margin-top: 0;">Absent Today</h3>
+        <p style="font-size: 32px; font-weight: bold; margin: 0;">{{ total_employees|add:"-"|add:present_today }}</p>
+    </div>
+    {% endif %}
+</div>
+
+{% if user.is_superuser %}
+<div class="content-box">
+    <h3>Recent Audit Logs</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>Model</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in recent_audits %}
+            <tr>
+                <td>{{ log.timestamp|date:"M d, Y H:i" }}</td>
+                <td>{{ log.model_name }}</td>
+                <td><strong>{{ log.action }}</strong></td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3" style="text-align: center;">No recent activity.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="content-box" style="padding: 30px;">
+    <h3 style="color: #496BD8; margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px;">My Profile</h3>
+    
+    <div style="display: flex; gap: 40px; margin-top: 20px;">
+        <div style="text-align: center;">
+            {% if user.employee.profile_picture %}
+            <img src="{{ user.employee.profile_picture.url }}" alt="Profile" style="width: 150px; height: 150px; border-radius: 75px; object-fit: cover; border: 3px solid #496BD8;">
+            {% else %}
+            <div style="width: 150px; height: 150px; border-radius: 75px; background-color: #ddd; color: #666; font-size: 48px; line-height: 150px; display: inline-block; border: 3px solid #ccc;">
+                {{ user.employee.first_name|first }}{{ user.employee.last_name|first }}
+            </div>
+            {% endif %}
+            
+            <div style="margin-top: 20px;">
+                <a href="{% url 'employee_update' user.employee.pk %}" class="btn" style="display: block; width: 100%; box-sizing: border-box;">✏️ Edit Profile</a>
+            </div>
+        </div>
+        
+        <div style="flex: 1;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 18px 0; color: #666; width: 150px;"><strong>Full Name:</strong></td>
+                    <td style="padding: 18px 0; font-size: 18px;">{{ user.employee.first_name }} {{ user.employee.last_name }}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 18px 0; color: #666;"><strong>Email:</strong></td>
+                    <td style="padding: 18px 0;">{{ user.employee.email }}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 18px 0; color: #666;"><strong>Phone:</strong></td>
+                    <td style="padding: 18px 0;">{{ user.employee.phone|default:"-" }}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 18px 0; color: #666;"><strong>Age:</strong></td>
+                    <td style="padding: 18px 0;">{{ user.employee.age|default:"-" }}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 18px 0; color: #666;"><strong>Department:</strong></td>
+                    <td style="padding: 18px 0;">{{ user.employee.department }}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 18px 0; color: #666;"><strong>Designation:</strong></td>
+                    <td style="padding: 18px 0;">{{ user.employee.designation }}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 18px 0; color: #666;"><strong>Joining Date:</strong></td>
+                    <td style="padding: 18px 0;">{{ user.employee.join_date|date:"F d, Y" }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 18px 0; color: #666;"><strong>Account Status:</strong></td>
+                    <td style="padding: 18px 0;">
+                        {% if user.employee.is_active %}
+                            <span style="color: green; font-weight: bold;">Active</span>
+                        {% else %}
+                            <span style="color: red; font-weight: bold;">Inactive</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="content-box" style="padding: 30px; margin-top: 20px;">
+    <h3 style="color: #496BD8; margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px;">Attendance Progress (Yearly)</h3>
+    <div style="display: flex; gap: 40px; margin-top: 20px;">
+        <div style="flex: 1; text-align: center; background-color: #f8f9fa; padding: 20px; border-radius: 8px;">
+            <p style="color: #666; margin: 0; font-size: 16px;">Required Attendance</p>
+            <p style="font-size: 36px; font-weight: bold; color: #333; margin: 10px 0;">200</p>
+        </div>
+        <div style="flex: 1; text-align: center; background-color: #f8f9fa; padding: 20px; border-radius: 8px;">
+            <p style="color: #666; margin: 0; font-size: 16px;">Your Attendance</p>
+            <p style="font-size: 36px; font-weight: bold; color: #496BD8; margin: 10px 0;">{{ user.employee.attendance_count }}</p>
+            <p style="font-size: 12px; color: #999; margin: 0;">* Increases automatically on login (max once per 23 hrs)</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

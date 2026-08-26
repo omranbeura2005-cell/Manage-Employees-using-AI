@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="display: flex; justify-content: center; margin-top: 50px;">
+    <div class="content-box" style="text-align: center; max-width: 500px; width: 100%;">
+        <h3 style="color: #ba2121; margin-top: 0;">Delete Employee?</h3>
+        <p>Are you sure you want to delete <strong>{{ employee.first_name }} {{ employee.last_name }}</strong>? This action cannot be undone.</p>
+        
+        <form method="post" style="margin-top: 20px;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Yes, Delete</button>
+            <a href="{% url 'employee_list' %}" class="btn" style="background-color: #666; margin-left: 10px;">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}
