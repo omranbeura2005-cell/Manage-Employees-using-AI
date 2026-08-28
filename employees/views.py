@@ -9,8 +9,8 @@ from django.http import HttpResponseForbidden
 from .models import Employee, Attendance, AuditLog, AdminChatMessage
 from .forms import EmployeeForm, AttendanceForm
 from django.conf import settings
+from django.db.models import Q
 import google.generativeai as genai
-
 
 @login_required
 def dashboard(request):
@@ -41,6 +41,8 @@ def dashboard(request):
 
 @login_required
 def employee_list(request):
+    search_query = request.GET.get('q', '')
+    
     if request.user.is_superuser:
         employees = Employee.objects.all()
     else:
@@ -49,7 +51,16 @@ def employee_list(request):
         except Employee.DoesNotExist:
             employees = Employee.objects.none()
             
-    return render(request, 'employee_list.html', {'employees': employees})
+    if search_query:
+        employees = employees.filter(
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query) |
+            Q(email__icontains=search_query) |
+            Q(department__icontains=search_query) |
+            Q(designation__icontains=search_query)
+        )
+            
+    return render(request, 'employee_list.html', {'employees': employees, 'search_query': search_query})
 
 @login_required
 def employee_detail(request, pk):
@@ -228,6 +239,37 @@ def attendance_report(request):
             
     return render(request, 'attendance_report.html', {'attendances': attendances})
 
+def get_employees_summary() -> str:
+    """Returns a summary of all employees, including their ID, name, email, department, designation, and active status."""
+    employees = Employee.objects.all()
+    if not employees.exists():
+        return "No employees found."
+    summary = []
+    for emp in employees:
+        summary.append(f"ID: {emp.id}, Name: {emp.first_name} {emp.last_name}, Email: {emp.email}, Dept: {emp.department}, Designation: {emp.designation}, Active: {emp.is_active}")
+    return "\n".join(summary)
+
+def get_employee_details(employee_id: int) -> str:
+    """Returns detailed information for a specific employee by their ID."""
+    try:
+        emp = Employee.objects.get(id=employee_id)
+        details = (
+            f"Name: {emp.first_name} {emp.last_name}\n"
+            f"Email: {emp.email}\n"
+            f"Phone: {emp.phone}\n"
+            f"Age: {emp.age}\n"
+            f"Department: {emp.department}\n"
+            f"Designation: {emp.designation}\n"
+            f"Salary: ${emp.salary}\n"
+            f"Join Date: {emp.join_date}\n"
+            f"Status: {'Active' if emp.is_active else 'Inactive'}\n"
+            f"Total Attendance Count: {emp.attendance_count}\n"
+            f"Current Month Attendance Count: {emp.current_month_attendance_count}"
+        )
+        return details
+    except Employee.DoesNotExist:
+        return f"Employee with ID {employee_id} not found."
+
 @login_required
 def ai_assistant_view(request):
     if not request.user.is_superuser:
@@ -239,14 +281,19 @@ def ai_assistant_view(request):
         try:
             # Configure Gemini API
             genai.configure(api_key=settings.GEMINI_API_KEY)
-            # Use gemini-1.5-flash as default model
-            model = genai.GenerativeModel('gemini-1.5-flash')
-            # Add a bit of context so the AI knows its role
-            system_prompt = "You are a helpful AI assistant for an Employee Management System. "
-            full_prompt = system_prompt + message
             
-            ai_response = model.generate_content(full_prompt)
+            system_prompt = "You are a helpful AI assistant for an Employee Management System. You can use your tools to answer questions about employees."
+            model = genai.GenerativeModel(
+                'gemini-3.6-flash',
+                tools=[get_employees_summary, get_employee_details],
+                system_instruction=system_prompt
+            )
+            
+            # Start a chat session that automatically executes function calls
+            chat = model.start_chat(enable_automatic_function_calling=True)
+            ai_response = chat.send_message(message)
             response_text = ai_response.text
+            
         except Exception as e:
             response_text = f"Error generating response: {str(e)}. Please check if your GEMINI_API_KEY is configured correctly."
             
