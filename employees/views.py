@@ -8,6 +8,9 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 from .models import Employee, Attendance, AuditLog, AdminChatMessage
 from .forms import EmployeeForm, AttendanceForm
+from django.conf import settings
+import google.generativeai as genai
+
 
 @login_required
 def dashboard(request):
@@ -232,7 +235,21 @@ def ai_assistant_view(request):
         
     if request.method == 'POST':
         message = request.POST.get('message')
-        response = f"Simulated AI Response for: {message}"
-        return render(request, 'ai_assistant.html', {'response': response, 'message': message})
+        
+        try:
+            # Configure Gemini API
+            genai.configure(api_key=settings.GEMINI_API_KEY)
+            # Use gemini-1.5-flash as default model
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            # Add a bit of context so the AI knows its role
+            system_prompt = "You are a helpful AI assistant for an Employee Management System. "
+            full_prompt = system_prompt + message
+            
+            ai_response = model.generate_content(full_prompt)
+            response_text = ai_response.text
+        except Exception as e:
+            response_text = f"Error generating response: {str(e)}. Please check if your GEMINI_API_KEY is configured correctly."
+            
+        return render(request, 'ai_assistant.html', {'response': response_text, 'message': message})
     
     return render(request, 'ai_assistant.html')
